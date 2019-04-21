@@ -1,0 +1,244 @@
+import numpy as np
+
+#returns 3D matrix containing all training data
+def readInFile(filename, dataCount, dataHeight):
+    digitsMatrix = []
+    digitsInfo = open(filename, 'r')
+    for i in range(dataCount):
+        digitsMatrix.append([])
+        for j in range(dataHeight):
+            line = digitsInfo.readline()
+            #removes final space for ease of manipulation later
+            line = line[:-1]
+            #trims out line of only whitespace, delete later if bad/test how results change
+            #if(line.isspace()): continue
+            digitsMatrix[i].append(list(line))
+    digitsInfo.close()
+
+    return digitsMatrix
+
+#read in training labels, return as list
+def readInLabels(filename):
+    labelsList = []
+    labels = open(filename, 'r')
+    for label in labels:
+        labelsList.append(int(label))
+
+    return labelsList
+
+#gets count of each number in the training set
+def getNumCounts(labelsList):
+    numCounts = {}
+
+    for charNum in labelsList:
+        num = int(charNum)
+        if num in numCounts:
+            numCounts[num] += 1
+        else:
+            numCounts[num] = 1
+    return numCounts
+
+#gets probability of each number appearing in training set as a dictionary
+def getNumProbs(labelsList, numCounts):
+    numProbs = {}
+    for i in range(len(set(labelsList))):
+        numProbs[i] = numCounts[i]/len(labelsList)
+
+    return numProbs
+
+#feature - calculate pixel density / or just count number of black pixels
+#this one doesnt really work with my methods
+def densityFeatures(imageLines):
+    blackPixels = 0
+    whitePixels = 0
+    for line in imageLines:
+        for char in line:
+            if char != ' ':
+                blackPixels += 1
+            else:
+                whitePixels += 1
+
+    return [blackPixels]
+
+#feature - one feature for each line in image, counts number of marked/unmarked pixels
+def pixelsPerLine(imageLines):
+    feats = []
+    for line in imageLines:
+        blackPix = 0
+        for char in line:
+            if char != ' ':
+                blackPix += 1
+        feats.append(blackPix)
+    return feats
+
+#features - partition digit image into 4x7 grid and return binary list based on
+#if the particular square has any spots in it or not
+#num columns by num rows must divide into size of array
+def partitionFeatures(imageLines, numRows, numCols):
+    #this list should have a length of 28 for digit information
+    partitionFeatures = []
+
+    iArray = np.asarray(imageLines)
+    gridImage = blockshaped(iArray, numCols, numRows)
+
+    for i in range(len(gridImage)):
+        for j in range(len(gridImage[i])):
+            if ('+' or '#') in gridImage[i][j]:
+                partitionFeatures.append(1)
+                break
+            if(j == len(gridImage[i]) - 1):
+                partitionFeatures.append(0)
+    return partitionFeatures
+
+#utility function to partition array into grids for partitionGrid method
+def blockshaped(arr, nrows, ncols):
+    h, w = arr.shape
+    return (arr.reshape(h//nrows, nrows, -1, ncols)
+               .swapaxes(1,2)
+               .reshape(-1, nrows, ncols))
+
+#feature that I might use, one for each pixel
+def featurePerPixel(imageLines):
+    #this list should be 28*28 = 784 length
+    pixelFeatures = []
+    for line in range(len(imageLines)):
+        for char in range(len(imageLines[line])):
+            if imageLines[line][char] != ' ':
+                pixelFeatures.append(1)
+            else:
+                pixelFeatures.append(0)
+    return pixelFeatures
+
+#calculate feature vector for each training data entry based on function passed in
+def getFeatureVectors(datatrix, featureFun):
+    features = []
+    for entry in datatrix:
+        featureVect = featureFun(entry)
+        features.append(featureVect)
+    return features
+
+#count times a feature occurs for each grid for each label in training images
+def countFeatures(featureList, labelsList):
+    fDict = {}
+
+    for i in range(len(featureList)):
+        currFeatVect = featureList[i]
+        currLabel = labelsList[i]
+        for j in range(len(currFeatVect)):
+            want = currFeatVect[j]
+            if want not in fDict:
+                fDict[want] = {}
+            if j not in fDict[want]:
+                fDict[want][j] = {}
+            if currLabel not in fDict[want][j]:
+                fDict[want][j][currLabel] = 1
+            else:
+                fDict[want][j][currLabel] += 1
+    return fDict 
+            
+#test input is binary features of one test image
+#featureCount is info gathered from training
+#numCount to divide for naive bayes calculations
+def naiveBayes(testInput, featureDict, numCounts):
+
+    partitionPossibilities = []
+
+    for i in range(len(testInput)):
+        partitionPossibilities.append(allForOne(testInput[i], i, featureDict, numCounts))
+
+    guessPossibilities = []
+    for i in range(len(numCounts)):
+        pos = 1
+        for j in range(len(partitionPossibilities)):
+            pos *= partitionPossibilities[j][i]
+        guessPossibilities.append(pos)
+
+    guess = guessPossibilities.index(max(guessPossibilities))
+    return guess
+
+#get range of possibilities over values 0-9 or 0-1 (digits/face) for nth partition being either 0 or 1
+#refer to slide 32/40 for intro to ML if this needs clarification
+def allForOne(binary, partition, featureDict, numCounts):
+    tot = sum(numCounts)
+    partitionPossibs = {}
+    for i in range(len(numCounts)):
+        numer = 0
+        if partition in featureDict[binary] and i in featureDict[binary][partition]:
+            numer = featureDict[binary][partition][i]
+        denom = numCounts[i]
+        #this probability is feature(x) = nth partition given either 0 or 
+        # 1 divided by number of times x appears in teh training data set
+        # we will apply laplace smoothing so as to not get a prob of ZERO 
+        partitionPossibs[i] = (numer + 1)/(denom + tot)
+    return partitionPossibs
+
+#MAIN METHOD
+
+which = input('\"face\" or \"digit\"?\n')
+
+trainfn = ''
+trainLabelsfn = ''
+trainCount = 0
+trainHeight = 0
+testfn = ''
+testLabels = ''
+testCount = 0
+testHeight = 0
+
+if which == 'face':
+    trainfn = 'facedata/facedatatrain'
+    trainLabelsfn = 'facedata/facedatatrainlabels'
+    trainCount = 451
+    trainHeight = 70
+    testfn = 'facedata/facedatatest'
+    testLabelsfn = 'facedata/facedatatestlabels'
+    testCount = 150
+    testHeight = 70
+
+elif which == 'digit':
+    trainfn = 'digitdata/trainingimages'
+    trainLabelsfn = 'digitdata/traininglabels'
+    trainCount = 5000
+    trainHeight = 28
+    testfn = 'digitdata/testimages'
+    testLabelsfn = 'digitdata/testlabels'
+    testCount = 1000
+    testHeight = 28
+
+else:
+    print('invalid input')
+    exit(0)
+
+trainMatrix = readInFile(trainfn, trainCount, trainHeight)
+labelList = readInLabels(trainLabelsfn)
+
+if(len(trainMatrix) != len(labelList)):
+    print('You read in the data incorrectly')
+    exit(0)
+
+print("SO BEGINS THE TRAINING")
+    
+numCount = getNumCounts(labelList)
+numProbs = getNumProbs(labelList, numCount)
+trainFeatVect = getFeatureVectors(trainMatrix, pixelsPerLine)
+
+#dictionary has all data necessary for calculating naive bayes
+#ex: bDict[0][0][0]: tells you how many images labelled 0 have no pixels marked in the 0th grid partition
+#ex: bDict[1][4][5]: tells you how many images labelled 5 have at least 1 marked pixel in the 4th grid partition
+bDict = countFeatures(trainFeatVect, labelList)
+
+print("TRAINING COMPLETED. NOW BEGINS THE TESTING")
+
+testingMatrix = readInFile(testfn, testCount, testHeight)
+testLabels = readInLabels(testLabelsfn)
+
+testFeatVects = getFeatureVectors(testingMatrix, pixelsPerLine)
+
+"""COMMENCE GUESSAGE"""
+correctCount = 0
+for i in range(len(testFeatVects)):
+    guess = naiveBayes(testFeatVects[i], bDict, numCount)
+    if guess == testLabels[i]:
+        correctCount += 1
+
+print(f'our classifier got {correctCount} out of {len(testLabels)} correct!')
