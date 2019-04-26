@@ -1,6 +1,7 @@
 import numpy as np
 import random
 import math
+import time
 
 #returns 3D matrix containing all training data
 def readInFile(filename, dataCount, dataHeight):
@@ -174,7 +175,16 @@ def allForOne(binary, partition, featureDict, numCounts):
         partitionPossibs[i] = (numer + 1)/(denom + tot)
     return partitionPossibs
 
+def calcVariance(corrects, average):
+    variance = 0
+    for correct in corrects:
+        variance += (correct - average)**2
+    variance /= len(corrects)
+    
+    return variance
+
 #MAIN METHOD
+start_time = time.time()
 
 #get user's input
 which = input('\"face\" or \"digit\"?\n')
@@ -236,6 +246,9 @@ while percent <= 1:
     #need to average our results for each percent of training we take in, lets try 10 for now
     count = 0
     average = 0.0
+    #keep track of # of times classifier guessed correctly for each trial to calculate variance and then sd
+    corrects = []
+
     while(count < 10):
         #get a list of numbers of currRange length which can range from 0 to number of labels/images
         randSamp = random.sample(range(len(labelList)), currRange)
@@ -261,10 +274,17 @@ while percent <= 1:
         #add to the average
         average += correctCount
         count += 1
+        corrects.append(correctCount)
         
     #divide average by count to get average over the ten trials
     average = round(average/count, 0)
+    variance = calcVariance(corrects, average)
 
-    print(f'On average ({count} trials), our Naive classifier got {average} out of {len(testLabels)} correct when trained with {round(100*percent, 1)}% of training data')
+    print(f'Statistics for {round(100*percent, 1)}% training data with {count} trials')
+    print(f'\tAverage correct guesses: {average} out of {len(testLabels)} correctly')
+    print(f'\tVariance: {variance}')
+    print(f'\tStandard Deviation: {math.sqrt(variance)}\n')
 
     percent += 0.1
+
+print(f'This took {round(time.time() - start_time, 2)} seconds')
