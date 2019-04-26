@@ -1,4 +1,6 @@
 import numpy as np
+import random
+import math
 
 #returns 3D matrix containing all training data
 def readInFile(filename, dataCount, dataHeight):
@@ -26,25 +28,25 @@ def readInLabels(filename):
 
     return labelsList
 
-#gets count of each number in the training set
-def getNumCounts(labelsList):
+#gets count of each number in the training set according to our random range
+def getNumCounts(labelsList, randRange):
     numCounts = {}
 
-    for charNum in labelsList:
-        num = int(charNum)
+    for n in randRange:
+        num = int(labelsList[n])
         if num in numCounts:
             numCounts[num] += 1
         else:
             numCounts[num] = 1
     return numCounts
 
-#gets probability of each number appearing in training set as a dictionary
-def getNumProbs(labelsList, numCounts):
-    numProbs = {}
-    for i in range(len(set(labelsList))):
-        numProbs[i] = numCounts[i]/len(labelsList)
+#picks a percentage of the training images in random fashion
+def randTrainImgs(traintrix, randRange):
+    percTrix = []
+    for n in randRange:
+        percTrix.append(traintrix[n])
 
-    return numProbs
+    return percTrix
 
 #feature - calculate pixel density / or just count number of black pixels
 #this one doesnt really work with my methods
@@ -117,13 +119,13 @@ def getFeatureVectors(datatrix, featureFun):
         features.append(featureVect)
     return features
 
-#count times a feature occurs for each grid for each label in training images
-def countFeatures(featureList, labelsList):
+#count times a feature occurs for each grid for each label in training images of random
+def countFeatures(featureList, labelsList, randSamp):
     fDict = {}
 
     for i in range(len(featureList)):
         currFeatVect = featureList[i]
-        currLabel = labelsList[i]
+        currLabel = labelsList[randSamp[i]]
         for j in range(len(currFeatVect)):
             want = currFeatVect[j]
             if want not in fDict:
@@ -156,14 +158,14 @@ def naiveBayes(testInput, featureDict, numCounts):
     guess = guessPossibilities.index(max(guessPossibilities))
     return guess
 
-#get range of possibilities over values 0-9 or 0-1 (digits/face) for nth partition being either 0 or 1
+#get range of possibilities over values 0-9 or 0-1 (digits/face) for nth partition
 #refer to slide 32/40 for intro to ML if this needs clarification
 def allForOne(binary, partition, featureDict, numCounts):
     tot = sum(numCounts)
     partitionPossibs = {}
     for i in range(len(numCounts)):
         numer = 0
-        if partition in featureDict[binary] and i in featureDict[binary][partition]:
+        if binary in featureDict and partition in featureDict[binary] and i in featureDict[binary][partition]:
             numer = featureDict[binary][partition][i]
         denom = numCounts[i]
         #this probability is feature(x) = nth partition given either 0 or 
@@ -174,8 +176,12 @@ def allForOne(binary, partition, featureDict, numCounts):
 
 #MAIN METHOD
 
+#get user's input
 which = input('\"face\" or \"digit\"?\n')
+while which != 'face' and which != 'digit':
+    which = input('Invalid input. Please input \"face\" or \"digit\" (no quotes)\n')
 
+#preliminary definitions
 trainfn = ''
 trainLabelsfn = ''
 trainCount = 0
@@ -209,36 +215,56 @@ else:
     print('invalid input')
     exit(0)
 
+#training data and labels
 trainMatrix = readInFile(trainfn, trainCount, trainHeight)
 labelList = readInLabels(trainLabelsfn)
 
-if(len(trainMatrix) != len(labelList)):
-    print('You read in the data incorrectly')
-    exit(0)
-
-print("SO BEGINS THE TRAINING")
-    
-numCount = getNumCounts(labelList)
-numProbs = getNumProbs(labelList, numCount)
-trainFeatVect = getFeatureVectors(trainMatrix, pixelsPerLine)
-
-#dictionary has all data necessary for calculating naive bayes
-#ex: bDict[0][0][0]: tells you how many images labelled 0 have no pixels marked in the 0th grid partition
-#ex: bDict[1][4][5]: tells you how many images labelled 5 have at least 1 marked pixel in the 4th grid partition
-bDict = countFeatures(trainFeatVect, labelList)
-
-print("TRAINING COMPLETED. NOW BEGINS THE TESTING")
-
+#testing data, labels, and feature vectors
 testingMatrix = readInFile(testfn, testCount, testHeight)
 testLabels = readInLabels(testLabelsfn)
 
 testFeatVects = getFeatureVectors(testingMatrix, pixelsPerLine)
 
-"""COMMENCE GUESSAGE"""
-correctCount = 0
-for i in range(len(testFeatVects)):
-    guess = naiveBayes(testFeatVects[i], bDict, numCount)
-    if guess == testLabels[i]:
-        correctCount += 1
+print("SO BEGINS THE TRAINING")
 
-print(f'our classifier got {correctCount} out of {len(testLabels)} correct!')
+#start the training data at 10%
+percent = 0.1
+
+while percent <= 1:
+    currRange = int(round(percent, 1) * len(labelList))
+
+    #need to average our results for each percent of training we take in, lets try 10 for now
+    count = 0
+    average = 0.0
+    while(count < 10):
+        #get a list of numbers of currRange length which can range from 0 to number of labels/images
+        randSamp = random.sample(range(len(labelList)), currRange)
+        
+        #get a whatever% sample of the label list and traintrix, importantly same indeces
+        percOfLabList = getNumCounts(labelList, randSamp)
+        percOfTraintrix = randTrainImgs(trainMatrix, randSamp)
+
+        #get the feature vectors for each image
+        trainFeatVect = getFeatureVectors(percOfTraintrix, pixelsPerLine)
+
+        #dictionary has all data necessary for calculating naive bayes
+        #ex: bDict[0][0][0]: tells you how many images labelled 0 have no pixels marked in the 0th grid partition
+        #ex: bDict[1][4][5]: tells you how many images labelled 5 have at least 1 marked pixel in the 4th grid partition
+        bDict = countFeatures(trainFeatVect, labelList, randSamp)
+
+        """COMMENCE GUESSAGE"""
+        correctCount = 0
+        for i in range(len(testFeatVects)):
+            guess = naiveBayes(testFeatVects[i], bDict, percOfLabList)
+            if guess == testLabels[i]:
+                correctCount += 1
+        #add to the average
+        average += correctCount
+        count += 1
+        
+    #divide average by count to get average over the ten trials
+    average = round(average/count, 0)
+
+    print(f'On average ({count} trials), our Naive classifier got {average} out of {len(testLabels)} correct when trained with {round(100*percent, 1)}% of training data')
+
+    percent += 0.1
