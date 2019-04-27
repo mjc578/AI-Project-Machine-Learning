@@ -1,3 +1,5 @@
+import numpy as np
+
 #returns 3D matrix containing all training data
 def readInFile(filename, dataCount, dataHeight):
     digitsMatrix = []

@@ -1,6 +1,5 @@
 import common_methods_lib as cml
 
-import numpy as np
 import random
 import math
 import time
@@ -92,8 +91,6 @@ testingMatrix = cml.readInFile(testfn, testCount, testHeight)
 testLabels = cml.readInLabels(testLabelsfn)
 
 testFeatVects = cml.getFeatureVectors(testingMatrix, cml.pixelsPerLine)
-
-print("SO BEGINS THE TRAINING")
 
 #start the training data at 10%
 percent = 0.1
