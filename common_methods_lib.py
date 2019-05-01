@@ -47,7 +47,6 @@ def randTrainImgs(traintrix, randRange):
     return percTrix
 
 #feature - calculate pixel density / or just count number of black pixels
-#this one doesnt really work with my methods
 def densityFeatures(imageLines):
     blackPixels = 0
     whitePixels = 0
@@ -73,21 +72,22 @@ def pixelsPerLine(imageLines):
 
 #features - partition digit image into 4x7 grid and return binary list based on
 #if the particular square has any spots in it or not
-#num columns by num rows must divide into size of array
-def partitionFeatures(imageLines, numRows, numCols):
-    #this list should have a length of 28 for digit information
+#this only works for digits sorry
+def partitionFeatures(imageLines):
     partitionFeatures = []
 
     iArray = np.asarray(imageLines)
-    gridImage = blockshaped(iArray, numCols, numRows)
+    gridImage = blockshaped(iArray, 7, 4)
 
+    count = 0
     for i in range(len(gridImage)):
         for j in range(len(gridImage[i])):
             if ('+' or '#') in gridImage[i][j]:
-                partitionFeatures.append(1)
-                break
-            if(j == len(gridImage[i]) - 1):
-                partitionFeatures.append(0)
+                if(len(partitionFeatures) == count):
+                    partitionFeatures.append(1)
+                else:
+                    partitionFeatures[count] += 1
+            
     return partitionFeatures
 
 #utility function to partition array into grids for partitionGrid method
@@ -99,7 +99,6 @@ def blockshaped(arr, nrows, ncols):
 
 #feature that I might use, one for each pixel
 def featurePerPixel(imageLines):
-    #this list should be 28*28 = 784 length
     pixelFeatures = []
     for line in range(len(imageLines)):
         for char in range(len(imageLines[line])):
