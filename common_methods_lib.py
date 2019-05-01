@@ -58,7 +58,7 @@ def densityFeatures(imageLines):
             else:
                 whitePixels += 1
 
-    return [blackPixels]
+    return (blackPixels, whitePixels)
 
 #feature - one feature for each line in image, counts number of marked/unmarked pixels
 def pixelsPerLine(imageLines):
