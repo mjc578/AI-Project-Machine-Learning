@@ -74,20 +74,17 @@ def pixelsPerLine(imageLines):
 #if the particular square has any spots in it or not
 #this only works for digits sorry
 def partitionFeatures(imageLines):
-    partitionFeatures = []
+    partitionFeatures = [0]
 
     iArray = np.asarray(imageLines)
     gridImage = blockshaped(iArray, 7, 4)
 
-    count = 0
     for i in range(len(gridImage)):
         for j in range(len(gridImage[i])):
             if ('+' or '#') in gridImage[i][j]:
-                if(len(partitionFeatures) == count):
-                    partitionFeatures.append(1)
-                else:
-                    partitionFeatures[count] += 1
-            
+                partitionFeatures[i] += 1
+        partitionFeatures.append(0)
+
     return partitionFeatures
 
 #utility function to partition array into grids for partitionGrid method
