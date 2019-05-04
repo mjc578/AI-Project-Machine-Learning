@@ -106,7 +106,7 @@ while percent <= 1:
     #get a whatever% sample of the label list and traintrix, importantly same indeces
     #percOfLabList = cml.getNumCounts(trainLabelList, randSamp)
     trainingImages = cml.randTrainImgs(trainMatrix, randSamp)
-
+    
     #get the feature vectors for each image
     trainFeatVect = cml.getFeatureVectors(trainingImages, cml.pixelsPerLine)
 
