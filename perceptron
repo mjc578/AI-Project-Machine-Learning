@@ -66,12 +66,12 @@ labelList = cml.readInLabels(trainLabelsfn)
 #testing data, labels, and feature vectors
 testingMatrix = cml.readInFile(testfn, testCount, testHeight)
 testLabels = cml.readInLabels(testLabelsfn)
-testFeatVects = cml.partitionFeatures(testingMatrix)
+testFeatVects = cml.getFeatureVectors(testingMatrix, cml.pixelsPerLine)
   
-trainFeatVects = cml.partitionFeatures(trainMatrix)
+trainFeatVects = cml.getFeatureVectors(trainMatrix, cml.pixelsPerLine)
  
 #Perceptron Algorithm
-weight = [[0.0] * z] * (29)
+weight = [[0.0] * z] * (trainHeight+1)
 totalError = 1
 epoch = 0
 while totalError != 0 and epoch != 500:
