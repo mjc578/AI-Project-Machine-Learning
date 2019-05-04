@@ -3,17 +3,16 @@ import common_methods_lib as cml
 import random
 import math
 import time
-            
 
-def predict(weight, featVects):
-    sum = 0.0
-    for i in range(trainHeight):
-        sum += weight[i] * featVects[i]
-    if sum >= 0:
-        return 1
-    else:
-        return 0
-
+def predict(weight, featVects, z):
+    sum = [0.0] * z
+    for j in range(z):
+        for i in range(trainHeight):
+            sum[j] += weight[i][j] * featVects[i]
+            if i == trainHeight-1:
+                sum[j] += weight[trainHeight][j]
+    m = sum.index(max(sum))
+    return m
 
 #MAIN METHOD
 start_time = time.time()
@@ -42,6 +41,7 @@ if which == 'face':
     testLabelsfn = 'facedata/facedatatestlabels'
     testCount = 150
     testHeight = 70
+    z = 2
 
 
 elif which == 'digit':
@@ -53,6 +53,7 @@ elif which == 'digit':
     testLabelsfn = 'digitdata/testlabels'
     testCount = 1000
     testHeight = 28
+    z = 10
 
 else:
     print('invalid input')
@@ -61,20 +62,48 @@ else:
 #training data and labels
 trainMatrix = cml.readInFile(trainfn, trainCount, trainHeight)
 labelList = cml.readInLabels(trainLabelsfn)
-trainFeatVects = cml.getFeatureVectors(trainMatrix, cml.pixelsPerLine)
 
 #testing data, labels, and feature vectors
 testingMatrix = cml.readInFile(testfn, testCount, testHeight)
 testLabels = cml.readInLabels(testLabelsfn)
-testFeatVects = cml.getFeatureVectors(testingMatrix, cml.pixelsPerLine)
+testFeatVects = cml.partitionFeatures(testingMatrix)
   
-weight = [0.2] * trainHeight
-learningRate = 0.3
+trainFeatVects = cml.partitionFeatures(trainMatrix)
+ 
+#Perceptron Algorithm
+weight = [[0.0] * z] * (29)
+totalError = 1
+epoch = 0
+while totalError != 0 and epoch != 500:
+    totalError = 0
+    epoch += 1
+    for i in range(trainCount):
+        prediction = predict(weight, trainFeatVects[i], z)
+        if labelList[i] != prediction:
+            for j in range(trainHeight):
+                weight[j][labelList[i]] += trainFeatVects[i][j] 
+                weight[j][prediction] -= trainFeatVects[i][j]
+                if j == trainHeight-1:
+                    weight[trainHeight][labelList[i]] +=1
+                    weight[trainHeight][prediction] -= 1
+                totalError += 1
+                    
+            
+        
+#COMMENCE GUESSAGE
+correctCount = 0
+for i in range(testCount):
+    output = predict(weight, testFeatVects[i], z)
+    if output == testLabels[i]:
+        correctCount +=1
+print(correctCount/testCount)
 
+"""
 #start the training data at 10%
-percent = 0.1
+percent = 0.6
 
 while percent <= 1:
+    
     currRange = int(round(percent, 1) * len(labelList))
 
     #need to average our results for each percent of training we take in, lets try 10 for now
@@ -84,6 +113,7 @@ while percent <= 1:
     corrects = []
 
     while(count < 1):
+        weight = [[0.0] * z] * (trainHeight+1)
         #get a list of numbers of currRange length which can range from 0 to number of labels/images
         randSamp = random.sample(range(len(labelList)), currRange)
         
@@ -92,31 +122,38 @@ while percent <= 1:
         percOfTraintrix = cml.randTrainImgs(trainMatrix, randSamp)
 
         #get the feature vectors for each image
-        trainFeatVect = cml.getFeatureVectors(percOfTraintrix, cml.pixelsPerLine)
+        trainFeatVects = cml.getFeatureVectors(percOfTraintrix, cml.pixelsPerLine)
 
         #Perceptron Algorithm
-        globalError = 1
+        totalError = 1
         epoch = 0
-        while globalError != 0 and epoch != 500:
-            globalError = 0
+        while totalError != 0 and epoch != 500:
+            totalError = 0
             epoch += 1
             for i in range(currRange):
-                prediction = predict(weight, trainFeatVects[i])
-                error = labelList[i] - prediction
-                for j in range(trainHeight):
-                    weight[j] += learningRate * error * trainFeatVects[i][j]
-                globalError += (error*error)
+                prediction = predict(weight, trainFeatVects[i], z)
+                if labelList[i] != prediction:
+                    #error = labelList[i] - prediction
+                    for j in range(trainHeight):
+                        weight[j][labelList[i]] += trainFeatVects[i][j] 
+                        weight[j][prediction] -= trainFeatVects[i][j]
+                        if j == trainHeight-1:
+                            weight[trainHeight][labelList[i]] +=1
+                            weight[trainHeight][prediction] -= 1
+                        totalError += 1
+                    
+            
         
-        """COMMENCE GUESSAGE"""
-        correct = 0
+        #COMMENCE GUESSAGE
+        correctCount = 0
         for i in range(testCount):
-            output = predict(weight, testFeatVects[i])
+            output = predict(weight, testFeatVects[i], z)
             if output == testLabels[i]:
-                correct +=1
+                correctCount +=1
         #add to the average
-        average += correct
+        average += correctCount
         count += 1
-        corrects.append(correct)
+        corrects.append(correctCount)
 
     #divide average by count to get average over the ten trials
     average = round(average/count, 0)
@@ -128,8 +165,20 @@ while percent <= 1:
     print(f'\tStandard Deviation: {math.sqrt(variance)}\n')
 
     percent += 0.1
-
+"""
 print(f'This took {round(time.time() - start_time, 2)} seconds')
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
