@@ -5,6 +5,13 @@ import math
 import time
 import operator
 
+def getPercLabels(labelList, randRange):
+    labtrix = []
+    for n in randRange:
+        labtrix.append(labelList[n])
+
+    return labtrix
+
 def euclidDistance(v1, v2):
     distance = 0
 
@@ -28,7 +35,7 @@ def getNeighbors(trainSet, test, n):
     
     return nearestNeighbors
 
-def classify(neighbors, trainSet, trainLablelList):
+def classify(neighbors, trainSet, trainLabelList):
     hashVotes = {}
     for x in range(len(neighbors)):
         vote = trainLabelList[trainSet.index(neighbors[x])]
@@ -87,7 +94,7 @@ else:
 
 #training data and labels
 trainMatrix = cml.readInFile(trainfn, trainCount, trainHeight)
-trainLabelList = cml.readInLabels(trainLabelsfn)
+labelList = cml.readInLabels(trainLabelsfn)
 
 #testing data, labels, and feature vectors
 testingMatrix = cml.readInFile(testfn, testCount, testHeight)
@@ -96,36 +103,49 @@ testLabels = cml.readInLabels(testLabelsfn)
 testFeatVects = cml.getFeatureVectors(testingMatrix, cml.pixelsPerLine)
 
 #start the training data at 10%
-percent = 1
+percent = 0.1
 
 while percent <= 1:
-    currRange = int(round(percent, 1) * len(trainLabelList))
+    currRange = int(round(percent, 1) * len(labelList))
 
-    #get a list of numbers of currRange length which can range from 0 to number of labels/images
-    randSamp = random.sample(range(len(trainLabelList)), currRange)
+    count = 0
+    average = 0.0
+    corrects = []
     
-    #get a whatever% sample of the label list and traintrix, importantly same indeces
-    #percOfLabList = cml.getNumCounts(trainLabelList, randSamp)
-    trainingImages = cml.randTrainImgs(trainMatrix, randSamp)
-    
-    #get the feature vectors for each image
-    trainFeatVect = cml.getFeatureVectors(trainingImages, cml.pixelsPerLine)
+    while(count < 5):
+        #get a list of numbers of currRange length which can range from 0 to number of labels/images
+        randSamp = random.sample(range(len(labelList)), currRange)
+        
+        #get a whatever% sample of the label list and traintrix, importantly same indeces
+        trainingLabels = getPercLabels(labelList, randSamp)
+        trainingImages = cml.randTrainImgs(trainMatrix, randSamp)
+        
+        #get the feature vectors for each image
+        trainFeatVect = cml.getFeatureVectors(trainingImages, cml.pixelsPerLine)
 
-    #Run for every element in test
-    numCorrect = 0
-    for x in range(len(testLabels)):
-        neighbors = getNeighbors(trainFeatVect, testFeatVects[x], 3)
-        guess = classify(neighbors, trainFeatVect, trainLabelList)
+        #Run for every element in test
+        numCorrect = 0
+        for x in range(len(testLabels)):
+            neighbors = getNeighbors(trainFeatVect, testFeatVects[x], 3)
+            guess = classify(neighbors, trainFeatVect, trainingLabels)
 
-        if guess == testLabels[x]:
-            print(f'Correct\n')
-            numCorrect += 1
-        else:
-            print(f'Incorrect\n')
+            if guess == testLabels[x]:
+                #print(f'Correct\n')
+                numCorrect += 1
+                        
+        average += numCorrect
+        count += 1
+        corrects.append(numCorrect)
 
-    print(f'Statistics for {round(100*percent, 1)}%')
-    print(f'\tCorrect guesses: {numCorrect} out of {len(testLabels)}')
-    percent += .1
+    average = round(average/count, 0)
+    variance = cml.calcVariance(corrects, average)
+
+    print(f'Statistics for {round(100*percent, 1)}% training data with {count} trials')
+    print(f'\tAverage correct guesses: {average} out of {len(testLabels)} correctly')
+    print(f'\tVariance: {variance}')
+    print(f'\tStandard Deviation: {math.sqrt(variance)}\n')
+
+    percent += 0.1
 
 
 print(f'This took {round(time.time() - start_time, 2)} seconds')
