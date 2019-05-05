@@ -7,10 +7,9 @@ import time
 def predict(weight, featVects, z):
     sum = [0.0] * z
     for j in range(z):
-        for i in range(trainHeight):
+        for i in range(28):
             sum[j] += weight[i][j] * featVects[i]
-            if i == trainHeight-1:
-                sum[j] += weight[trainHeight][j]
+        sum[j] += weight[28][j]
     m = sum.index(max(sum))
     return m
 
@@ -66,41 +65,10 @@ labelList = cml.readInLabels(trainLabelsfn)
 #testing data, labels, and feature vectors
 testingMatrix = cml.readInFile(testfn, testCount, testHeight)
 testLabels = cml.readInLabels(testLabelsfn)
-testFeatVects = cml.getFeatureVectors(testingMatrix, cml.pixelsPerLine)
+testFeatVects = cml.getFeatureVectors(testingMatrix, cml.partitionFeatures)
   
-trainFeatVects = cml.getFeatureVectors(trainMatrix, cml.pixelsPerLine)
- 
-#Perceptron Algorithm
-weight = [[0.0] * z] * (trainHeight+1)
-totalError = 1
-epoch = 0
-while totalError != 0 and epoch != 500:
-    totalError = 0
-    epoch += 1
-    for i in range(trainCount):
-        prediction = predict(weight, trainFeatVects[i], z)
-        if labelList[i] != prediction:
-            for j in range(trainHeight):
-                weight[j][labelList[i]] += trainFeatVects[i][j] 
-                weight[j][prediction] -= trainFeatVects[i][j]
-                if j == trainHeight-1:
-                    weight[trainHeight][labelList[i]] +=1
-                    weight[trainHeight][prediction] -= 1
-                totalError += 1
-                    
-            
-        
-#COMMENCE GUESSAGE
-correctCount = 0
-for i in range(testCount):
-    output = predict(weight, testFeatVects[i], z)
-    if output == testLabels[i]:
-        correctCount +=1
-print(correctCount/testCount)
-
-"""
 #start the training data at 10%
-percent = 0.6
+percent = 0.1
 
 while percent <= 1:
     
@@ -113,7 +81,7 @@ while percent <= 1:
     corrects = []
 
     while(count < 1):
-        weight = [[0.0] * z] * (trainHeight+1)
+        weight = [[0.0] * z] * (29)
         #get a list of numbers of currRange length which can range from 0 to number of labels/images
         randSamp = random.sample(range(len(labelList)), currRange)
         
@@ -122,28 +90,26 @@ while percent <= 1:
         percOfTraintrix = cml.randTrainImgs(trainMatrix, randSamp)
 
         #get the feature vectors for each image
-        trainFeatVects = cml.getFeatureVectors(percOfTraintrix, cml.pixelsPerLine)
+        trainFeatVects = cml.getFeatureVectors(percOfTraintrix, cml.partitionFeatures)
 
         #Perceptron Algorithm
         totalError = 1
         epoch = 0
-        while totalError != 0 and epoch != 500:
+        while totalError != 0 and epoch != 50:
             totalError = 0
             epoch += 1
             for i in range(currRange):
                 prediction = predict(weight, trainFeatVects[i], z)
                 if labelList[i] != prediction:
                     #error = labelList[i] - prediction
-                    for j in range(trainHeight):
+                    for j in range(28):
                         weight[j][labelList[i]] += trainFeatVects[i][j] 
                         weight[j][prediction] -= trainFeatVects[i][j]
-                        if j == trainHeight-1:
-                            weight[trainHeight][labelList[i]] +=1
-                            weight[trainHeight][prediction] -= 1
-                        totalError += 1
+                    weight[28][labelList[i]] +=1
+                    weight[28][prediction] -= 1
+                    totalError += 1
                     
-            
-        
+
         #COMMENCE GUESSAGE
         correctCount = 0
         for i in range(testCount):
@@ -165,149 +131,6 @@ while percent <= 1:
     print(f'\tStandard Deviation: {math.sqrt(variance)}\n')
 
     percent += 0.1
-"""
+
 print(f'This took {round(time.time() - start_time, 2)} seconds')
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-"""
-while error != 0 and iteration != 1000: 
-    error = 0
-    iteration += 1
-    sum = 0
-    for i in range(trainCount):
-        for j in range(trainHeight):
-            sum += trainFeatVects[i][j] * weight[j]
-        if sum >= 0 and labelList[i] == 0: 
-            for k in range(trainHeight):
-                weight[k] -= trainFeatVects[i][k] 
-                error += 1
-        elif sum < 0 and labelList[i] == 1:
-            for k in range(trainHeight):
-                weight[k] += trainFeatVects[i][k]
-                error += 1
-    print(error)
-
-correct = 0
-for i in range(testCount):
-    sum = 0
-    for j in range(trainHeight):
-        sum += trainFeatVects[i][j] * weight[j]
-        if sum>=0:
-            output = 1
-        else:
-            output = 0
-        if output == testLabels[i]:
-            correct +=1
-    print(output)
-    print(correct/testCount)
-"""
-
-
-"""
-trainBlackPixels = [0]*trainCount
-trainWhitePixels = [0]*trainCount
-for i in range(trainCount):
-    trainBlackPixels[i] = cml.getFeatureVectors(trainMatrix[i])[0]
-    # trainWhitePixels[i] = cml.densityFeatures(trainMatrix[i])[1]
-    
-weight = [0.0] * trainHeight
-error = 1
-iteration = 0
-"""
-
-"""
-while error != 0 and iteration != 5000: 
-    error = 0
-    iteration += 1
-    for i in range(trainCount):
-        sum = (trainBlackPixels[i] * weight[0]) + (trainWhitePixels[i] * weight[1]) + weight[2]
-        if sum >= 0 and labelList[i] == 0: 
-            weight[0] -= trainBlackPixels[i] 
-            weight[1] -= trainWhitePixels[i] 
-            weight[2] -= 1 
-            error += 1
-        elif sum < 0 and labelList[i] == 1:
-            weight[0] += trainBlackPixels[i]
-            weight[1] += trainWhitePixels[i] 
-            weight[2] += 1 
-            error += 1
-    #print(error)
-        
-testBlackPixels = [0]*testCount
-testWhitePixels = [0]*testCount
-for i in range(testCount):
-    testBlackPixels[i] = cml.densityFeatures(testingMatrix[i])[0]
-    testWhitePixels[i] = cml.densityFeatures(testingMatrix[i])[1]
-    sum = (testBlackPixels[i] * weight[0]) + (testWhitePixels[i] * weight[1]) + weight[2]
-    if sum >= 0:
-        sum = 1
-    else:
-        sum = 0
-    print(sum) 
-
-print(weight)
-print(trainBlackPixels)
-print(trainWhitePixels)
-"""
-
-
-
-"""
-globalError = 1
-learningRate = 0.1
-iteration = 0
-
-while globalError != 0 and iteration != 5000:
-    globalError = 0
-    iteration += 1
-    for i in range(trainCount):
-        output = calculateOutput(weight, trainBlackPixels[i], trainWhitePixels[i])
-        localError = labelList[i] - output
-        weight[0] += learningRate * localError * trainBlackPixels[i]
-        weight[1] += learningRate * localError * trainWhitePixels[i]
-        weight[2] += learningRate * localError
-        globalError += (localError*localError)
-
-    print(globalError)
-
-print(weight)
-print(trainBlackPixels)
-print(trainWhitePixels)
-
-
-testBlackPixels = [0]*testCount
-testWhitePixels = [0]*testCount
-for i in range(testCount):
-    testBlackPixels[i] = cml.densityFeatures(testingMatrix[i])[0]
-    testWhitePixels[i] = cml.densityFeatures(testingMatrix[i])[1]
-    output = calculateOutput(weight, testBlackPixels[i], testWhitePixels[i])
-    print(output)
-
-
-"""
-
-
-
-
-
 
