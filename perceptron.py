@@ -4,12 +4,19 @@ import random
 import math
 import time
 
+def getPercLabels(labelList, randRange):
+    labtrix = []
+    for n in randRange:
+        labtrix.append(labelList[n])
+
+    return labtrix
+
 def predict(weight, featVects, z):
     sum = [0.0] * z
-    for j in range(z):
-        for i in range(28):
-            sum[j] += weight[i][j] * featVects[i]
-        sum[j] += weight[28][j]
+    for i in range(z):
+        for j in range(len(featVects)):
+            sum[i] += weight[i][j] * featVects[j]
+        sum[i] += weight[i][len(featVects)]
     m = sum.index(max(sum))
     return m
 
@@ -65,7 +72,9 @@ labelList = cml.readInLabels(trainLabelsfn)
 #testing data, labels, and feature vectors
 testingMatrix = cml.readInFile(testfn, testCount, testHeight)
 testLabels = cml.readInLabels(testLabelsfn)
-testFeatVects = cml.getFeatureVectors(testingMatrix, cml.partitionFeatures)
+testFeatVects = cml.getFeatureVectors(testingMatrix, cml.featurePerPixel)
+
+numWeights = len(testFeatVects[0]) + 1
   
 #start the training data at 10%
 percent = 0.1
@@ -81,34 +90,40 @@ while percent <= 1:
     corrects = []
 
     while(count < 1):
-        weight = [[0.0] * z] * (29)
+        #weight = [[0] * numWeights] * z
+        weight = []
+        for n in range(z):
+            weight.append([])
+            for nn in range(numWeights):
+                weight[n].append(0)
+
         #get a list of numbers of currRange length which can range from 0 to number of labels/images
         randSamp = random.sample(range(len(labelList)), currRange)
-        
+       
         #get a whatever% sample of the label list and traintrix, importantly same indeces
-        percOfLabList = cml.getNumCounts(labelList, randSamp)
+        percOfLabList = getPercLabels(labelList, randSamp)
         percOfTraintrix = cml.randTrainImgs(trainMatrix, randSamp)
 
         #get the feature vectors for each image
-        trainFeatVects = cml.getFeatureVectors(percOfTraintrix, cml.partitionFeatures)
+        trainFeatVects = cml.getFeatureVectors(percOfTraintrix, cml.featurePerPixel)
 
         #Perceptron Algorithm
         totalError = 1
         epoch = 0
-        while totalError != 0 and epoch != 50:
+        while totalError != 0 and epoch != 15:
             totalError = 0
             epoch += 1
-            for i in range(currRange):
+            for i in range(len(percOfLabList)):
                 prediction = predict(weight, trainFeatVects[i], z)
-                if labelList[i] != prediction:
+                #print(f'This is the current label {percOfLabList[i]} and the prediction is {prediction}')
+                if percOfLabList[i] != prediction:
                     #error = labelList[i] - prediction
-                    for j in range(28):
-                        weight[j][labelList[i]] += trainFeatVects[i][j] 
-                        weight[j][prediction] -= trainFeatVects[i][j]
-                    weight[28][labelList[i]] +=1
-                    weight[28][prediction] -= 1
+                    for j in range(numWeights - 1):
+                        weight[percOfLabList[i]][j] += trainFeatVects[i][j]
+                        weight[prediction][j] -= trainFeatVects[i][j]
+                    weight[percOfLabList[i]][numWeights - 1] += 1
+                    weight[prediction][numWeights - 1] -= 1
                     totalError += 1
-                    
 
         #COMMENCE GUESSAGE
         correctCount = 0

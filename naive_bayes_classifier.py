@@ -90,7 +90,7 @@ labelList = cml.readInLabels(trainLabelsfn)
 testingMatrix = cml.readInFile(testfn, testCount, testHeight)
 testLabels = cml.readInLabels(testLabelsfn)
 
-testFeatVects = cml.getFeatureVectors(testingMatrix, cml.partitionFeatures)
+testFeatVects = cml.getFeatureVectors(testingMatrix, cml.pixelsPerLine)
 
 #start the training data at 10%
 percent = 0.1
@@ -113,7 +113,7 @@ while percent <= 1:
         percOfTraintrix = cml.randTrainImgs(trainMatrix, randSamp)
 
         #get the feature vectors for each image
-        trainFeatVect = cml.getFeatureVectors(percOfTraintrix, cml.partitionFeatures)
+        trainFeatVect = cml.getFeatureVectors(percOfTraintrix, cml.pixelsPerLine)
 
         #dictionary has all data necessary for calculating naive bayes
         #ex: bDict[0][0][0]: tells you how many images labelled 0 have no pixels marked in the 0th grid partition
