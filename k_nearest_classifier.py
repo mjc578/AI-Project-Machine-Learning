@@ -93,7 +93,7 @@ trainLabelList = cml.readInLabels(trainLabelsfn)
 testingMatrix = cml.readInFile(testfn, testCount, testHeight)
 testLabels = cml.readInLabels(testLabelsfn)
 
-testFeatVects = cml.getFeatureVectors(testingMatrix, cml.partitionFeatures)
+testFeatVects = cml.getFeatureVectors(testingMatrix, cml.pixelsPerLine)
 
 #start the training data at 10%
 percent = 1
@@ -109,7 +109,7 @@ while percent <= 1:
     trainingImages = cml.randTrainImgs(trainMatrix, randSamp)
     
     #get the feature vectors for each image
-    trainFeatVect = cml.getFeatureVectors(trainingImages, cml.partitionFeatures)
+    trainFeatVect = cml.getFeatureVectors(trainingImages, cml.pixelsPerLine)
 
     #Run for every element in test
     numCorrect = 0
