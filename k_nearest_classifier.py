@@ -39,8 +39,9 @@ def classify(neighbors, trainSet, trainLablelList):
             hashVotes[vote] = 1
 
     #now sort votes to figure out most favored
-    votes = sorted(hashVotes.items(), key = operator.itemgetter(1), reverse = True)
-    return votes[0][0]
+    #votes = sorted(hashVotes.items(), key = operator.itemgetter(1))
+    #return votes[0][0]
+    return max(hashVotes, key=hashVotes.get)
 
 #MAIN METHOD
 start_time = time.time()
@@ -92,7 +93,7 @@ trainLabelList = cml.readInLabels(trainLabelsfn)
 testingMatrix = cml.readInFile(testfn, testCount, testHeight)
 testLabels = cml.readInLabels(testLabelsfn)
 
-testFeatVects = cml.getFeatureVectors(testingMatrix, cml.pixelsPerLine)
+testFeatVects = cml.getFeatureVectors(testingMatrix, cml.partitionFeatures)
 
 #start the training data at 10%
 percent = 1
@@ -108,7 +109,7 @@ while percent <= 1:
     trainingImages = cml.randTrainImgs(trainMatrix, randSamp)
     
     #get the feature vectors for each image
-    trainFeatVect = cml.getFeatureVectors(trainingImages, cml.pixelsPerLine)
+    trainFeatVect = cml.getFeatureVectors(trainingImages, cml.partitionFeatures)
 
     #Run for every element in test
     numCorrect = 0

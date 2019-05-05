@@ -70,6 +70,17 @@ def pixelsPerLine(imageLines):
         feats.append(blackPix)
     return feats
 
+#feature - one feature per column with a count of how many black pixels are in the col
+def pixelsPerCol(imageLines):
+    feats = []
+    for line in np.transpose(imageLines):
+        blackPix = 0
+        for char in line:
+            if char != ' ':
+                blackPix += 1
+        feats.append(blackPix)
+    return feats
+
 #features - partition digit image into 4x7 grid and return binary list based on
 #if the particular square has any spots in it or not
 #this only works for digits sorry
