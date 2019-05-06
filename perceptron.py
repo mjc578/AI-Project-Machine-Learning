@@ -21,7 +21,6 @@ def predict(weight, featVects, z):
     return m
 
 #MAIN METHOD
-start_time = time.time()
 
 #get user's input
 which = input('\"face\" or \"digit\"?\n')
@@ -78,6 +77,8 @@ numWeights = len(testFeatVects[0]) + 1
   
 #start the training data at 10%
 percent = 0.1
+
+entire_time = time.time()
 
 while percent <= 1:
     
@@ -156,5 +157,5 @@ while percent <= 1:
 
     percent += 0.1
 
-print(f'This took {round(time.time() - start_time, 2)} seconds')
+print(f'This entire process took {round(time.time() - entire_time, 2)} seconds')
 
