@@ -107,7 +107,7 @@ while percent <= 1:
 
     total_time = 0
 
-    while(count < 100):
+    while(count < 5):
         #get a list of numbers of currRange length which can range from 0 to number of labels/images
         randSamp = random.sample(range(len(labelList)), currRange)
         
