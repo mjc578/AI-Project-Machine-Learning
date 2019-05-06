@@ -89,7 +89,11 @@ while percent <= 1:
     #keep track of # of times classifier guessed correctly for each trial to calculate variance and then sd
     corrects = []
 
-    while(count < 1):
+    total_time = 0
+
+    while(count < 5):
+        #training begins here so stat timer
+        start_time = time.time()
         #weight = [[0] * numWeights] * z
         weight = []
         for n in range(z):
@@ -110,7 +114,7 @@ while percent <= 1:
         #Perceptron Algorithm
         totalError = 1
         epoch = 0
-        while totalError != 0 and epoch != 15:
+        while totalError != 0 and epoch != 1:
             totalError = 0
             epoch += 1
             for i in range(len(percOfLabList)):
@@ -125,6 +129,10 @@ while percent <= 1:
                     weight[prediction][numWeights - 1] -= 1
                     totalError += 1
 
+        #add the time it took to the total time to later get the average
+        total_time += round(time.time() - start_time, 2)
+
+
         #COMMENCE GUESSAGE
         correctCount = 0
         for i in range(testCount):
@@ -136,14 +144,15 @@ while percent <= 1:
         count += 1
         corrects.append(correctCount)
 
-    #divide average by count to get average over the ten trials
+     #divide average by count to get average over the ten trials
     average = round(average/count, 0)
     variance = cml.calcVariance(corrects, average)
 
     print(f'Statistics for {round(100*percent, 1)}% training data with {count} trials')
     print(f'\tAverage correct guesses: {average} out of {len(testLabels)} correctly')
     print(f'\tVariance: {variance}')
-    print(f'\tStandard Deviation: {math.sqrt(variance)}\n')
+    print(f'\tStandard Deviation: {math.sqrt(variance)}')
+    print(f'\tAverage training time for this percentage: {round(total_time/count, 2)} seconds\n')
 
     percent += 0.1
 
