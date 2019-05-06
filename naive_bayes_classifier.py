@@ -102,7 +102,7 @@ while percent <= 1:
     #need to average our results for each percent of training we take in, lets try 10 for now
     count = 0
     average = 0.0
-    #keep track of # of times classifier guessed correctly for each trial to calculate variance and then sd
+    #keep track of # of times classifier guessed correctly for each trial to calculate variance and the sd
     corrects = []
 
     total_time = 0
