@@ -51,8 +51,6 @@ def classify(neighbors, trainSet, trainLabelList):
     return max(hashVotes, key=hashVotes.get)
 
 #MAIN METHOD
-start_time = time.time()
-
 #get user's input
 which = input('\"face\" or \"digit\"?\n')
 while which != 'face' and which != 'digit':
@@ -96,6 +94,10 @@ else:
 trainMatrix = cml.readInFile(trainfn, trainCount, trainHeight)
 labelList = cml.readInLabels(trainLabelsfn)
 
+#Generate all feature vectors for training
+fullTrainFeatVect = cml.getFeatureVectors(trainMatrix, cml.pixelsPerLine)
+
+
 #testing data, labels, and feature vectors
 testingMatrix = cml.readInFile(testfn, testCount, testHeight)
 testLabels = cml.readInLabels(testLabelsfn)
@@ -104,8 +106,10 @@ testFeatVects = cml.getFeatureVectors(testingMatrix, cml.pixelsPerLine)
 
 #start the training data at 10%
 percent = 0.1
+entire_time = time.time()
 
 while percent <= 1:
+    start_time = time.time()
     currRange = int(round(percent, 1) * len(labelList))
 
     count = 0
@@ -113,6 +117,7 @@ while percent <= 1:
     corrects = []
     
     while(count < 5):
+        total_time = 0
         #get a list of numbers of currRange length which can range from 0 to number of labels/images
         randSamp = random.sample(range(len(labelList)), currRange)
         
@@ -121,12 +126,16 @@ while percent <= 1:
         trainingImages = cml.randTrainImgs(trainMatrix, randSamp)
         
         #get the feature vectors for each image
-        trainFeatVect = cml.getFeatureVectors(trainingImages, cml.pixelsPerLine)
+        trainFeatVect = getPercLabels(fullTrainFeatVect, randSamp)
 
         #Run for every element in test
         numCorrect = 0
+        
+        #This is where actual algo starts, so start timer
+        start_time = time.time()
+        
         for x in range(len(testLabels)):
-            neighbors = getNeighbors(trainFeatVect, testFeatVects[x], 3)
+            neighbors = getNeighbors(trainFeatVect, testFeatVects[x], 1)
             guess = classify(neighbors, trainFeatVect, trainingLabels)
 
             if guess == testLabels[x]:
@@ -137,15 +146,17 @@ while percent <= 1:
         count += 1
         corrects.append(numCorrect)
 
+        total_time += round(time.time() - start_time, 2)
+
     average = round(average/count, 0)
     variance = cml.calcVariance(corrects, average)
 
     print(f'Statistics for {round(100*percent, 1)}% training data with {count} trials')
     print(f'\tAverage correct guesses: {average} out of {len(testLabels)} correctly')
     print(f'\tVariance: {variance}')
-    print(f'\tStandard Deviation: {math.sqrt(variance)}\n')
+    print(f'\tStandard Deviation: {math.sqrt(variance)}')
+    print(f'\tAverage training time for this percentage: {round(total_time/count, 2)} seconds\n')
 
     percent += 0.1
 
-
-print(f'This took {round(time.time() - start_time, 2)} seconds')
+print(f'This entire process took {round(time.time() - entire_time, 2)} seconds') 
